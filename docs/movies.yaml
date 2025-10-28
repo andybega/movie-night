@@ -1,0 +1,40 @@
+nominations:
+  - person: Nigel
+    movies:
+      - Godfather
+      - 28 Days Later
+  
+  - person: Andy
+    movies:
+      - Zoolander
+      - The Fifth Element
+  
+  - person: Marju
+    movies:
+      - The Matrix
+  
+  - person: Egle
+    movies:
+      - Chainsaws Were Singing (2024)
+  
+  - person: Aleks
+    movies:
+      - Riders of Justice (2020)
+      - Django Unchained
+      - Friendship (2024)
+      - Strange Darling
+      - Midsommar
+      - Ex Machina
+  
+  - person: Ankit
+    movies:
+      - The Mummy
+      - Perfect Days
+      - Past Lifes
+  
+  - person: Serhii
+    movies:
+      - Ran (1985)
+      - Throne of Blood (1957)
+      - Harakiri (1962)
+      - Ikiru (1952)

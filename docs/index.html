@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Movie Night Picker</title>
+    <script src="https://cdn.jsdelivr.net/npm/js-yaml@4.1.0/dist/js-yaml.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            padding: 40px;
+            max-width: 600px;
+            width: 100%;
+        }
+
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+        }
+
+        .movie-icon {
+            text-align: center;
+            font-size: 3em;
+            margin-bottom: 20px;
+        }
+
+        .form-group {
+            margin-bottom: 25px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #555;
+            font-weight: 600;
+        }
+
+        input[type="text"] {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+
+        input[type="text"]:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        button {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        .result {
+            margin-top: 30px;
+            padding: 25px;
+            background: #f8f9fa;
+            border-radius: 12px;
+            border-left: 5px solid #667eea;
+            display: none;
+        }
+
+        .result.show {
+            display: block;
+            animation: slideIn 0.4s ease-out;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .result h2 {
+            color: #667eea;
+            margin-bottom: 15px;
+            font-size: 1.5em;
+        }
+
+        .movie-title {
+            font-size: 1.3em;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .nominated-by {
+            color: #666;
+            font-style: italic;
+        }
+
+        .movie-list {
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 2px solid #eee;
+        }
+
+        .movie-list h3 {
+            color: #555;
+            margin-bottom: 15px;
+        }
+
+        .person-movies {
+            margin-bottom: 15px;
+        }
+
+        .person-name {
+            font-weight: 600;
+            color: #667eea;
+        }
+
+        .movies {
+            color: #666;
+            margin-left: 10px;
+        }
+
+        .loading {
+            text-align: center;
+            color: #666;
+            padding: 20px;
+        }
+
+        .error {
+            background: #fee;
+            color: #c33;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="movie-icon">🎬</div>
+        <h1>Movie Night Picker</h1>
+        
+        <form id="movieForm">
+            <div class="form-group">
+                <label for="seedInput">Enter a seed word:</label>
+                <input 
+                    type="text" 
+                    id="seedInput" 
+                    name="seed" 
+                    required 
+                    placeholder="e.g., popcorn"
+                >
+            </div>
+            <button type="submit">Pick a Movie! 🎲</button>
+        </form>
+
+        <div id="result" class="result">
+            <h2>The Movie:</h2>
+            <div class="movie-title" id="movieTitle"></div>
+            <div class="nominated-by">Nominated by <span id="personName"></span></div>
+        </div>
+
+        <div class="movie-list">
+            <h3>All Nominations:</h3>
+            <div id="movieListContent"></div>
+        </div>
+    </div>
+
+    <script>
+        // Movie data will be loaded from YAML file
+        let movieData = [];
+
+        // Generate our own RNG because we are insane and Sonnet 4.5 didn't do a 
+        // good job with it's attempt.
+        // https://stackoverflow.com/questions/521295/seeding-the-random-number-generator-in-javascript/47593316#47593316
+        function cyrb128(str) {
+            let h1 = 1779033703, h2 = 3144134277,
+                h3 = 1013904242, h4 = 2773480762;
+            for (let i = 0, k; i < str.length; i++) {
+                k = str.charCodeAt(i);
+                h1 = h2 ^ Math.imul(h1 ^ k, 597399067);
+                h2 = h3 ^ Math.imul(h2 ^ k, 2869860233);
+                h3 = h4 ^ Math.imul(h3 ^ k, 951274213);
+                h4 = h1 ^ Math.imul(h4 ^ k, 2716044179);
+            }
+            h1 = Math.imul(h3 ^ (h1 >>> 18), 597399067);
+            h2 = Math.imul(h4 ^ (h2 >>> 22), 2869860233);
+            h3 = Math.imul(h1 ^ (h3 >>> 17), 951274213);
+            h4 = Math.imul(h2 ^ (h4 >>> 19), 2716044179);
+            h1 ^= (h2 ^ h3 ^ h4), h2 ^= h1, h3 ^= h1, h4 ^= h1;
+            return [h1>>>0, h2>>>0, h3>>>0, h4>>>0];
+        }
+
+        function sfc32(a, b, c, d) {
+            return function() {
+                a |= 0; b |= 0; c |= 0; d |= 0;
+                let t = (a + b | 0) + d | 0;
+                d = d + 1 | 0;
+                a = b ^ b >>> 9;
+                b = c + (c << 3) | 0;
+                c = (c << 21 | c >>> 11);
+                c = c + t | 0;
+                return (t >>> 0) / 4294967296;
+            }
+        }
+
+
+        // Seeded Random Number Generator (LCG algorithm)
+        class SeededRandom {
+            constructor(seed_word) {
+                // Create cyrb128 state:
+                var seed = cyrb128(seed_word);
+                // Four 32-bit component hashes provide the seed for sfc32.
+                this.rand = sfc32(seed[0], seed[1], seed[2], seed[3]);
+            }
+
+            next() {
+                return this.rand();
+            }
+        }
+
+        // Display all nominations
+        function displayMovieList() {
+            const listContent = document.getElementById('movieListContent');
+            let html = '';
+            
+            movieData.forEach(person => {
+                html += `
+                    <div class="person-movies">
+                        <span class="person-name">${person.person}:</span>
+                        <span class="movies">${person.movies.join(', ')}</span>
+                    </div>
+                `;
+            });
+            
+            listContent.innerHTML = html;
+        }
+
+        // Fair movie selection - each person has equal chance
+        function selectMovie(seed) {
+            const rng = new SeededRandom(seed);
+            
+            // Step 1: Pick a person (each person has equal 1/n chance)
+            const personIndex = Math.floor(rng.next() * movieData.length);
+            const selectedPerson = movieData[personIndex];
+            
+            // Step 2: Pick a random movie from that person's list
+            const movieIndex = Math.floor(rng.next() * selectedPerson.movies.length);
+            const selectedMovie = selectedPerson.movies[movieIndex];
+            
+            return {
+                movie: selectedMovie,
+                person: selectedPerson.person
+            };
+        }
+
+        // Load movie data from YAML file
+        async function loadMovieData() {
+            try {
+                const response = await fetch('movies.yaml');
+                if (!response.ok) {
+                    throw new Error('Failed to load movies.yaml');
+                }
+                const yamlText = await response.text();
+                const data = jsyaml.load(yamlText);
+                movieData = data.nominations;
+                displayMovieList();
+                document.getElementById('movieForm').style.display = 'block';
+            } catch (error) {
+                console.error('Error loading movie data:', error);
+                const container = document.querySelector('.container');
+                const errorDiv = document.createElement('div');
+                errorDiv.className = 'error';
+                errorDiv.textContent = 'Error loading movie data. Please make sure movies.yaml is available.';
+                container.insertBefore(errorDiv, container.firstChild);
+            }
+        }
+
+        // Handle form submission
+        document.getElementById('movieForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const seedInput = document.getElementById('seedInput');
+            const seed = seedInput.value.trim();
+            
+            if (seed === '') {
+                alert('Please enter a seed word');
+                return;
+            }
+            
+            const selection = selectMovie(seed);
+            
+            document.getElementById('movieTitle').textContent = selection.movie;
+            document.getElementById('personName').textContent = selection.person;
+            
+            const resultDiv = document.getElementById('result');
+            resultDiv.classList.remove('show');
+            // Trigger reflow to restart animation
+            void resultDiv.offsetWidth;
+            resultDiv.classList.add('show');
+        });
+
+        // Initialize the page
+        document.getElementById('movieForm').style.display = 'none';
+        loadMovieData();
+    </script>
+</body>
+</html>
