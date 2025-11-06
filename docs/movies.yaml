@@ -8,6 +8,8 @@ nominations:
     movies:
       - Zoolander
       - The Fifth Element
+      - Atomic Blonde
+      - Tropic Thunder
   
   - person: Marju
     movies:
@@ -20,10 +22,9 @@ nominations:
   - person: Aleks
     movies:
       - Riders of Justice (2020)
-      - Django Unchained
+      - Jojo Rabbit
       - Friendship (2024)
       - Strange Darling
-      - Midsommar
       - Ex Machina
   
   - person: Ankit
