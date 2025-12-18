@@ -6,7 +6,6 @@ nominations:
   
   - person: Andy
     movies:
-      - Zoolander
       - The Fifth Element
       - Atomic Blonde
       - Tropic Thunder
@@ -21,7 +20,6 @@ nominations:
   
   - person: Aleks
     movies:
-      - Riders of Justice (2020)
       - Jojo Rabbit
       - Friendship (2024)
       - Strange Darling
@@ -37,6 +35,15 @@ nominations:
   - person: Serhii
     movies:
       - Ran (1985)
-      - Throne of Blood (1957)
       - Harakiri (1962)
       - Ikiru (1952)
+
+  - person: Sergei
+    movies: 
+      - PK (2014)
+      - Perfect Sense (2011)
+
+  - person: Eve
+    movies:
+      - Promising Young Woman
+      - The Isle of Dogs
